@@ -1,7 +1,18 @@
 const express = require('express')
+require('dotenv').config()
 const app = express()
 const PORT = 3001
 const baseUrl = '/api/todos'
+const mongoose = require('mongoose')
+
+const connectMongo = async () => {
+  try {
+    await mongoose.connect(process.env.MONGODB_URI)
+    console.log('Connected to MongoDB')
+  } catch (error) {
+    console.log(error)
+  }
+}
 
 const requestLogger = (request, response, next) => {
   console.log('Method', request.method)
@@ -10,6 +21,35 @@ const requestLogger = (request, response, next) => {
   console.log('---')
   next()
 }
+
+const errorHandler = (error, request, response, next) => {
+  if (
+    error.name === 'ValidationError' &&
+    error.message.includes('Todo validation failed')
+  ) {
+    return response.status(400).json({
+      error: error.message,
+    })
+  }
+  next()
+}
+
+mongoose.set('strictQuery', false)
+connectMongo()
+
+const todoSchema = new mongoose.Schema({
+  task: {
+    type: String,
+    required: [true, 'Task is required'],
+    minLength: [1, 'Task must be at least 1 character long'],
+  },
+  done: {
+    type: Boolean,
+    default: false,
+  },
+})
+
+const Todo = mongoose.model('Todo', todoSchema)
 
 // Mock database to pull todos from
 let todos = [
@@ -46,17 +86,15 @@ app.get(baseUrl, (request, response) => {
 })
 
 // POST a todo
-app.post(baseUrl, (request, response) => {
-  // Task must be filled i.e. length cannot be 0 -- put in Schema
-  // Done default is false -- put in the Schema
-  const todo = request.body
-  if (todo.task.length === 0) {
-    response.status(400).json({
-      error: 'task not provided',
-    })
-  } else {
-    todos = todos.concat(todo)
-    response.status(201).json(todo)
+app.post(baseUrl, async (request, response, next) => {
+  const todoDocument = new Todo({
+    task: request.body.task,
+  })
+  try {
+    const savedTodo = await todoDocument.save()
+    response.status(201).json(savedTodo)
+  } catch (error) {
+    next(error)
   }
 })
 
@@ -107,6 +145,8 @@ app.get(`${baseUrl}/:id`, (request, response) => {
   }
   response.status(200).json(todo)
 })
+
+app.use(errorHandler)
 
 // Listener
 app.listen(PORT, () => {
