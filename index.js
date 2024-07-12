@@ -69,6 +69,20 @@ app.put(`${baseUrl}/:id`, (request, response) => {
   }
 })
 
+// DELETE request
+app.delete(`${baseUrl}/:id`, (request, response) => {
+  const id = parseInt(request.params.id)
+  // Invalid id
+  if (!todos.find((todo) => todo.id === id)) {
+    response.status(400).json({
+      error: 'invalid id',
+    })
+  } else {
+    todos = todos.filter((todo) => todo.id !== id)
+    response.status(204).end()
+  }
+})
+
 // GET single todo based on id
 app.get(`${baseUrl}/:id`, (request, response) => {
   // Use the id and filter out the matchin todo
