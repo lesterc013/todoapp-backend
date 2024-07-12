@@ -3,6 +3,14 @@ const app = express()
 const PORT = 3001
 const baseUrl = '/api/todos'
 
+const requestLogger = (request, response, next) => {
+  console.log('Method', request.method)
+  console.log('Path', request.path)
+  console.log('Body', request.body)
+  console.log('---')
+  next()
+}
+
 // Mock database to pull todos from
 let todos = [
   {
@@ -22,7 +30,11 @@ let todos = [
   },
 ]
 
+/**
+ * MIDDLEWARE BEFORE PATHS
+ */
 app.use(express.json())
+app.use(requestLogger)
 
 /**
  * API CALLS
