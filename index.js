@@ -81,8 +81,9 @@ app.use(requestLogger)
  */
 
 // GET all todos
-app.get(baseUrl, (request, response) => {
-  response.status(200).json(todos)
+app.get(baseUrl, async (request, response) => {
+  const allTodos = await Todo.find({})
+  response.status(200).json(allTodos)
 })
 
 // POST a todo
