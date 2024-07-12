@@ -1,6 +1,7 @@
 const express = require('express')
 const app = express()
 const PORT = 3001
+const baseUrl = '/api/todos'
 
 // Mock database to pull todos from
 let todos = [
@@ -28,12 +29,27 @@ app.use(express.json())
  */
 
 // GET all todos
-app.get('/api/todos', (request, response) => {
+app.get(baseUrl, (request, response) => {
   response.status(200).json(todos)
 })
 
+// POST a todo
+app.post(baseUrl, (request, response) => {
+  // Task must be filled i.e. length cannot be 0 -- put in Schema
+  // Done default is false -- put in the Schema
+  const todo = request.body
+  if (todo.task.length === 0) {
+    response.status(400).json({
+      error: 'task not provided',
+    })
+  } else {
+    todos = todos.concat(todo)
+    response.status(201).json(todo)
+  }
+})
+
 // GET single todo based on id
-app.get('/api/todos/:id', (request, response) => {
+app.get(`${baseUrl}:id`, (request, response) => {
   // Use the id and filter out the matchin todo
   const id = parseInt(request.params.id)
   const todo = todos.filter((todo) => todo.id === id)
