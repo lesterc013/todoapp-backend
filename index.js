@@ -158,16 +158,20 @@ app.delete(`${baseUrl}/:id`, async (request, response, next) => {
 })
 
 // GET single todo based on id
-app.get(`${baseUrl}/:id`, (request, response) => {
-  // Use the id and filter out the matchin todo
-  const id = parseInt(request.params.id)
-  const todo = todos.filter((todo) => todo.id === id)
-  if (todo.length === 0) {
-    response.status(400).json({
-      error: 'BadRequest: invalid id',
-    })
+app.get(`${baseUrl}/:id`, async (request, response, next) => {
+  try {
+    const doc = await Todo.findById(request.params.id)
+    if (!doc) {
+      const error = new Error('valid id but document not found')
+      error.statusCode = 400
+      return next(error)
+    }
+    response.status(200).json(doc)
+  } catch (error) {
+    error.message = 'invalid id'
+    error.statusCode = 400
+    next(error)
   }
-  response.status(200).json(todo)
 })
 
 app.use(errorHandler)
