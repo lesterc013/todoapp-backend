@@ -34,6 +34,10 @@ const errorHandler = (error, request, response, next) => {
     return response.status(400).json({
       error: error.message,
     })
+  } else if (error.message === 'valid id but document not found') {
+    return response.status(404).json({
+      error: error.message,
+    })
   }
   next()
 }
@@ -107,10 +111,15 @@ app.post(baseUrl, async (request, response, next) => {
 app.put(`${baseUrl}/:id`, async (request, response, next) => {
   const id = request.params.id
   const update = request.body
-  // findById -- error handle if not found
+  // findById -- catches error IF ID IS INVALID TYPE
   let doc = null
   try {
     doc = await Todo.findById(id)
+    if (!doc) {
+      const error = new Error('valid id but document not found')
+      error.statusCode = 400
+      return next(error)
+    }
   } catch (error) {
     error.message = 'invalid id'
     error.statusCode = 400
@@ -120,7 +129,7 @@ app.put(`${baseUrl}/:id`, async (request, response, next) => {
   doc.task = update.task
   doc.done = update.done
 
-  // Valid id -- save() to run full validation
+  // Valid id -- save() to run full validation, error if validation of Schema does not work
   try {
     const savedDoc = await doc.save()
     response.status(201).json(savedDoc)
@@ -131,16 +140,20 @@ app.put(`${baseUrl}/:id`, async (request, response, next) => {
 })
 
 // DELETE request
-app.delete(`${baseUrl}/:id`, (request, response) => {
-  const id = parseInt(request.params.id)
-  // Invalid id
-  if (!todos.find((todo) => todo.id === id)) {
-    response.status(400).json({
-      error: 'invalid id',
-    })
-  } else {
-    todos = todos.filter((todo) => todo.id !== id)
+app.delete(`${baseUrl}/:id`, async (request, response, next) => {
+  const id = request.params.id
+  try {
+    const deleted = await Todo.findByIdAndDelete(id)
+    if (!deleted) {
+      const error = new Error('valid id but document not found')
+      error.statusCode = 400
+      return next(error)
+    }
     response.status(204).end()
+  } catch (error) {
+    error.message = 'invalid id'
+    error.statusCode = 400
+    next(error)
   }
 })
 
