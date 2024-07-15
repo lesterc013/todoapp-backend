@@ -30,6 +30,10 @@ const errorHandler = (error, request, response, next) => {
     return response.status(400).json({
       error: error.message,
     })
+  } else if (error.message === 'invalid id' && error.statusCode === 400) {
+    return response.status(400).json({
+      error: error.message,
+    })
   }
   next()
 }
@@ -100,23 +104,29 @@ app.post(baseUrl, async (request, response, next) => {
 })
 
 // PUT a todo
-app.put(`${baseUrl}/:id`, (request, response) => {
-  const id = parseInt(request.params.id)
+app.put(`${baseUrl}/:id`, async (request, response, next) => {
+  const id = request.params.id
   const update = request.body
-  // Invalid id in url
-  if (!todos.find((todo) => todo.id === id)) {
-    response.status(400).json({
-      error: 'invalid id',
-    })
+  // findById -- error handle if not found
+  let doc = null
+  try {
+    doc = await Todo.findById(id)
+  } catch (error) {
+    error.message = 'invalid id'
+    error.statusCode = 400
+    return next(error)
   }
-  // Task is empty
-  else if (update.task.length === 0) {
-    response.status(400).json({
-      error: 'task not provided',
-    })
-  } else {
-    todos = todos.map((todo) => (todo.id === id ? update : todo))
-    response.status(200).json(update)
+  // Update the relevant fields
+  doc.task = update.task
+  doc.done = update.done
+
+  // Valid id -- save() to run full validation
+  try {
+    const savedDoc = await doc.save()
+    response.status(201).json(savedDoc)
+  } catch (error) {
+    console.log(error)
+    next(error)
   }
 })
 
