@@ -139,7 +139,7 @@ app.put(`${baseUrl}/:id`, async (request, response, next) => {
   }
 })
 
-// DELETE request
+// DELETE one todo
 app.delete(`${baseUrl}/:id`, async (request, response, next) => {
   const id = request.params.id
   try {
@@ -155,6 +155,13 @@ app.delete(`${baseUrl}/:id`, async (request, response, next) => {
     error.statusCode = 400
     next(error)
   }
+})
+
+// DELETE ALL TODOS
+app.delete(baseUrl, async (request, response) => {
+  const deleted = await Todo.deleteMany({})
+  console.log(deleted)
+  response.status(204).end()
 })
 
 // GET single todo based on id
