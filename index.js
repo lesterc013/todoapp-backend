@@ -2,6 +2,7 @@ const express = require('express')
 const crypto = require('crypto')
 const cookieParser = require('cookie-parser')
 const config = require('./utils/config')
+const middleware = require('./utils/middleware')
 const app = express()
 const baseUrl = '/api/todos'
 const mongoose = require('mongoose')
@@ -13,47 +14,6 @@ const connectMongo = async () => {
   } catch (error) {
     console.log(error)
   }
-}
-
-/**
- * CUSTOM MIDDLEWARE
- */
-const requestLogger = (request, response, next) => {
-  console.log('Method', request.method)
-  console.log('Path', request.path)
-  console.log('Body', request.body)
-  console.log('---')
-  next()
-}
-
-const errorHandler = (error, request, response, next) => {
-  if (
-    error.name === 'ValidationError' &&
-    error.message.includes('Todo validation failed')
-  ) {
-    return response.status(400).json({
-      error: error.message,
-    })
-  } else if (
-    error.message === 'invalid document id' &&
-    error.statusCode === 400
-  ) {
-    return response.status(400).json({
-      error: error.message,
-    })
-  } else if (error.message === 'valid document id but document not found') {
-    return response.status(404).json({
-      error: error.message,
-    })
-  } else if (
-    error.statusCode === 401 &&
-    error.message === 'Unauthorised access'
-  ) {
-    return response.status(401).json({
-      error: error.message,
-    })
-  }
-  next()
 }
 
 mongoose.set('strictQuery', false)
@@ -83,29 +43,12 @@ const todoSchema = new mongoose.Schema({
 const Todo = mongoose.model('Todo', todoSchema)
 
 /**
- * MIDDLEWARE BEFORE PATHS
+ * USE MIDDLEWARE BEFORE PATHS
  */
 app.use(express.json())
-app.use(requestLogger)
 app.use(cookieParser())
-app.use((request, response, next) => {
-  if (!request.cookies.sessionId) {
-    // Generate the UUID
-    const sessionId = crypto.randomUUID()
-    const maxAge = 1000 * 60 * 5
-    // Store it in response.cookie which is the Set-Cookie header for subsequent requests
-    response.cookie('sessionId', sessionId, {
-      httpOnly: true,
-      maxAge: maxAge, // 1000 * 60 * 60 * 24 * 7
-    })
-    // Set the current request.sessionId = this sessionId so that the following routes can use it for this request
-    request.sessionId = sessionId
-  } else {
-    // We access the request.cookies.sessionId, and set it to something we can use further below
-    request.sessionId = request.cookies.sessionId
-  }
-  next()
-})
+app.use(middleware.requestLogger)
+app.use(middleware.setSessionId)
 
 /**
  * API CALLS
@@ -239,7 +182,7 @@ app.get(`${baseUrl}/:id`, async (request, response, next) => {
   }
 })
 
-app.use(errorHandler)
+app.use(middleware.errorHandler)
 
 // Listener
 app.listen(config.PORT, () => {
