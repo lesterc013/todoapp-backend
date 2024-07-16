@@ -1,4 +1,6 @@
 const express = require('express')
+const crypto = require('crypto')
+const cookieParser = require('cookie-parser')
 require('dotenv').config()
 const app = express()
 const PORT = 3001
@@ -14,6 +16,9 @@ const connectMongo = async () => {
   }
 }
 
+/**
+ * CUSTOM MIDDLEWARE
+ */
 const requestLogger = (request, response, next) => {
   console.log('Method', request.method)
   console.log('Path', request.path)
@@ -30,12 +35,22 @@ const errorHandler = (error, request, response, next) => {
     return response.status(400).json({
       error: error.message,
     })
-  } else if (error.message === 'invalid id' && error.statusCode === 400) {
+  } else if (
+    error.message === 'invalid document id' &&
+    error.statusCode === 400
+  ) {
     return response.status(400).json({
       error: error.message,
     })
-  } else if (error.message === 'valid id but document not found') {
+  } else if (error.message === 'valid document id but document not found') {
     return response.status(404).json({
+      error: error.message,
+    })
+  } else if (
+    error.statusCode === 401 &&
+    error.message === 'Unauthorised access'
+  ) {
+    return response.status(401).json({
       error: error.message,
     })
   }
@@ -55,34 +70,43 @@ const todoSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
+  sessionId: {
+    type: String,
+    required: true,
+  },
+  createdAt: {
+    type: Date,
+    expires: '10m',
+    default: Date.now,
+  },
 })
 
 const Todo = mongoose.model('Todo', todoSchema)
-
-// Mock database to pull todos from
-let todos = [
-  {
-    id: 1,
-    task: 'task 1',
-    done: true,
-  },
-  {
-    id: 2,
-    task: 'task 2',
-    done: false,
-  },
-  {
-    id: 3,
-    task: 'task 3',
-    done: true,
-  },
-]
 
 /**
  * MIDDLEWARE BEFORE PATHS
  */
 app.use(express.json())
 app.use(requestLogger)
+app.use(cookieParser())
+app.use((request, response, next) => {
+  if (!request.cookies.sessionId) {
+    // Generate the UUID
+    const sessionId = crypto.randomUUID()
+    const maxAge = 1000 * 60 * 5
+    // Store it in response.cookie which is the Set-Cookie header for subsequent requests
+    response.cookie('sessionId', sessionId, {
+      httpOnly: true,
+      maxAge: maxAge, // 1000 * 60 * 60 * 24 * 7
+    })
+    // Set the current request.sessionId = this sessionId so that the following routes can use it for this request
+    request.sessionId = sessionId
+  } else {
+    // We access the request.cookies.sessionId, and set it to something we can use further below
+    request.sessionId = request.cookies.sessionId
+  }
+  next()
+})
 
 /**
  * API CALLS
@@ -90,7 +114,8 @@ app.use(requestLogger)
 
 // GET all todos
 app.get(baseUrl, async (request, response) => {
-  const allTodos = await Todo.find({})
+  const allTodos = await Todo.find({ sessionId: request.sessionId })
+  // find() returns [] if nothing is found; keep this in mind for frontend rendering
   response.status(200).json(allTodos)
 })
 
@@ -98,6 +123,7 @@ app.get(baseUrl, async (request, response) => {
 app.post(baseUrl, async (request, response, next) => {
   const todoDocument = new Todo({
     task: request.body.task,
+    sessionId: request.sessionId,
   })
   try {
     const savedTodo = await todoDocument.save()
@@ -107,6 +133,19 @@ app.post(baseUrl, async (request, response, next) => {
   }
 })
 
+// Helper function creating errors
+const createDocNotFoundError = () => {
+  const error = new Error('valid document id but document not found')
+  error.statusCode = 400
+  return error
+}
+
+const createUnauthorisedError = () => {
+  const error = new Error('Unauthorised access')
+  error.statusCode = 401
+  return error
+}
+
 // PUT a todo
 app.put(`${baseUrl}/:id`, async (request, response, next) => {
   const id = request.params.id
@@ -115,13 +154,18 @@ app.put(`${baseUrl}/:id`, async (request, response, next) => {
   let doc = null
   try {
     doc = await Todo.findById(id)
+    console.log('doc', doc)
+    console.log('this sessionId', request.sessionId)
+    console.log('doc sessionId', doc.sessionId)
     if (!doc) {
-      const error = new Error('valid id but document not found')
-      error.statusCode = 400
-      return next(error)
+      return next(createDocNotFoundError())
+    }
+    // sessionId check
+    if (doc.sessionId !== request.sessionId) {
+      return next(createUnauthorisedError())
     }
   } catch (error) {
-    error.message = 'invalid id'
+    error.message = 'invalid document id'
     error.statusCode = 400
     return next(error)
   }
@@ -142,24 +186,34 @@ app.put(`${baseUrl}/:id`, async (request, response, next) => {
 // DELETE one todo
 app.delete(`${baseUrl}/:id`, async (request, response, next) => {
   const id = request.params.id
+  // Find the doc first to do error checking
   try {
-    const deleted = await Todo.findByIdAndDelete(id)
-    if (!deleted) {
-      const error = new Error('valid id but document not found')
-      error.statusCode = 400
-      return next(error)
+    const doc = await Todo.findById(id)
+    if (!doc) {
+      return next(createDocNotFoundError())
     }
-    response.status(204).end()
+    if (doc.sessionId !== request.sessionId) {
+      return next(createUnauthorisedError())
+    }
   } catch (error) {
     error.message = 'invalid id'
     error.statusCode = 400
+    next(error)
+  }
+
+  // If all error checks pass, run this block
+  try {
+    await Todo.findByIdAndDelete(id)
+    response.status(204).end()
+  } catch (error) {
+    console.log(error)
     next(error)
   }
 })
 
 // DELETE ALL TODOS
 app.delete(baseUrl, async (request, response) => {
-  const deleted = await Todo.deleteMany({})
+  const deleted = await Todo.deleteMany({ sessionId: request.sessionId })
   console.log(deleted)
   response.status(204).end()
 })
