@@ -1,4 +1,5 @@
 const mongoose = require('mongoose')
+require('dotenv').config()
 
 const todoSchema = new mongoose.Schema({
   task: {
@@ -20,6 +21,9 @@ const todoSchema = new mongoose.Schema({
     required: true,
   },
 })
+
+// Set a TTL index so that mongo knows to delete x seconds after the createdAt timing
+todoSchema.index({ expireAt: 1 }, { expireAfterSeconds: 0 })
 
 todoSchema.set('toJSON', {
   transform: (document, returnedObject) => {

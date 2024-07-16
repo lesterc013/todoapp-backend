@@ -18,7 +18,7 @@ todoRouter.get('/', async (request, response) => {
 
 // POST a todo
 todoRouter.post('/', async (request, response, next) => {
-  const timeToExpire = 1000 * 60 * 5
+  const timeToExpire = 1000 * 60
   const todoDocument = new Todo({
     task: request.body.task,
     sessionId: request.sessionId,
