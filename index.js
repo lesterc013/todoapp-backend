@@ -1,5 +1,4 @@
 const express = require('express')
-const crypto = require('crypto')
 const cookieParser = require('cookie-parser')
 const config = require('./utils/config')
 const middleware = require('./utils/middleware')
