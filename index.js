@@ -74,10 +74,10 @@ const todoSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  createdAt: {
+  // Does not exactly expire at that time due to limitations of mongodb removal (found in docs)
+  expireAt: {
     type: Date,
-    expires: '10m',
-    default: Date.now,
+    required: true,
   },
 })
 
@@ -121,9 +121,13 @@ app.get(baseUrl, async (request, response) => {
 
 // POST a todo
 app.post(baseUrl, async (request, response, next) => {
+  const timeToExpire = 1000 * 60 * 5
   const todoDocument = new Todo({
     task: request.body.task,
     sessionId: request.sessionId,
+    // Hardcode expireAt to be 5mins from when the POST is made
+    // new Date will set the milliseconds from the epoch to be a legit date format
+    expireAt: new Date(Date.now() + timeToExpire),
   })
   try {
     const savedTodo = await todoDocument.save()
@@ -223,9 +227,10 @@ app.get(`${baseUrl}/:id`, async (request, response, next) => {
   try {
     const doc = await Todo.findById(request.params.id)
     if (!doc) {
-      const error = new Error('valid id but document not found')
-      error.statusCode = 400
-      return next(error)
+      return next(createDocNotFoundError())
+    }
+    if (doc.sessionId !== request.sessionId) {
+      return next(createUnauthorisedError())
     }
     response.status(200).json(doc)
   } catch (error) {
