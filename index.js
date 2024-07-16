@@ -1,15 +1,14 @@
 const express = require('express')
 const crypto = require('crypto')
 const cookieParser = require('cookie-parser')
-require('dotenv').config()
+const config = require('./utils/config')
 const app = express()
-const PORT = 3001
 const baseUrl = '/api/todos'
 const mongoose = require('mongoose')
 
 const connectMongo = async () => {
   try {
-    await mongoose.connect(process.env.MONGODB_URI)
+    await mongoose.connect(config.MONGODB_URI)
     console.log('Connected to MongoDB')
   } catch (error) {
     console.log(error)
@@ -243,6 +242,6 @@ app.get(`${baseUrl}/:id`, async (request, response, next) => {
 app.use(errorHandler)
 
 // Listener
-app.listen(PORT, () => {
-  console.log('Server running on', PORT)
+app.listen(config.PORT, () => {
+  console.log('Server running on', config.PORT)
 })
