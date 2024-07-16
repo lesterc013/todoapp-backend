@@ -2,9 +2,7 @@ const express = require('express')
 const cookieParser = require('cookie-parser')
 const config = require('./utils/config')
 const middleware = require('./utils/middleware')
-const Todo = require('./models/todoModel')
 const app = express()
-const baseUrl = '/api/todos'
 const mongoose = require('mongoose')
 const todoRouter = require('./controllers/todoRouter')
 
