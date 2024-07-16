@@ -2,6 +2,7 @@ const express = require('express')
 const cookieParser = require('cookie-parser')
 const config = require('./utils/config')
 const middleware = require('./utils/middleware')
+const Todo = require('./models/todoModel')
 const app = express()
 const baseUrl = '/api/todos'
 const mongoose = require('mongoose')
@@ -17,29 +18,6 @@ const connectMongo = async () => {
 
 mongoose.set('strictQuery', false)
 connectMongo()
-
-const todoSchema = new mongoose.Schema({
-  task: {
-    type: String,
-    required: [true, 'Task is required'],
-    minLength: [1, 'Task must be at least 1 character long'],
-  },
-  done: {
-    type: Boolean,
-    default: false,
-  },
-  sessionId: {
-    type: String,
-    required: true,
-  },
-  // Does not exactly expire at that time due to limitations of mongodb removal (found in docs)
-  expireAt: {
-    type: Date,
-    required: true,
-  },
-})
-
-const Todo = mongoose.model('Todo', todoSchema)
 
 /**
  * USE MIDDLEWARE BEFORE PATHS
