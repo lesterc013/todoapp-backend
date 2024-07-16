@@ -9,6 +9,7 @@ const requestLogger = (request, response, next) => {
 }
 
 const errorHandler = (error, request, response, next) => {
+  console.log('error name:', error.name)
   if (
     error.name === 'ValidationError' &&
     error.message.includes('Todo validation failed')
@@ -17,18 +18,25 @@ const errorHandler = (error, request, response, next) => {
       error: error.message,
     })
   } else if (
-    error.message === 'invalid document id' &&
-    error.statusCode === 400
+    error.name === 'TypeError' &&
+    error.message === 'invalid document id'
   ) {
     return response.status(400).json({
       error: error.message,
     })
-  } else if (error.message === 'valid document id but document not found') {
+  } else if (error.name === 'CastError') {
+    return response.status(400).json({
+      error: 'id provided cannot be cast to valid mongo id',
+    })
+  } else if (
+    error.name === 'Error' &&
+    error.message === 'valid document id but document not found'
+  ) {
     return response.status(404).json({
       error: error.message,
     })
   } else if (
-    error.statusCode === 401 &&
+    error.name === 'Error' &&
     error.message === 'Unauthorised access'
   ) {
     return response.status(401).json({

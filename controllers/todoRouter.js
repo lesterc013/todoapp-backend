@@ -42,9 +42,6 @@ todoRouter.put('/:id', async (request, response, next) => {
   let doc = null
   try {
     doc = await Todo.findById(id)
-    console.log('doc', doc)
-    console.log('this sessionId', request.sessionId)
-    console.log('doc sessionId', doc.sessionId)
     if (!doc) {
       return next(createDocNotFoundError())
     }
