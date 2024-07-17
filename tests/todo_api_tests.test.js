@@ -185,6 +185,25 @@ describe('When there are three todos already POSTed', () => {
 
       assert.strictEqual(forbiddenResponse.body.error, 'Unauthorised access')
     })
+
+    test('Valid doc ID but not found', async () => {
+      const update = {
+        task: 'test 1 PUT',
+        done: true,
+      }
+      await Todo.findByIdAndDelete(test1TodoId)
+      const notFoundResponse = await api
+        .put(`/api/todos/${test1TodoId}`)
+        .send(update)
+        .set('Cookie', `sessionId=${sessionId}`)
+        .expect(404)
+        .expect('Content-Type', /application\/json/)
+
+      assert.strictEqual(
+        notFoundResponse.body.error,
+        'valid document id but document not found'
+      )
+    })
   })
 })
 
