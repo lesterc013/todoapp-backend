@@ -222,6 +222,21 @@ describe('When there are three todos already POSTed', () => {
         'id provided cannot be cast to valid mongo id'
       )
     })
+
+    test('Empty update should lead to validation error', async () => {
+      const update = {}
+      const validationErrorResponse = await api
+        .put(`/api/todos/${test1TodoId}`)
+        .send(update)
+        .set('Cookie', `sessionId=${sessionId}`)
+        .expect(400)
+        .expect('Content-Type', /application\/json/)
+
+      assert.strictEqual(
+        validationErrorResponse.body.error,
+        'Todo validation failed: task: Task is required'
+      )
+    })
   })
 })
 
