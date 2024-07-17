@@ -283,9 +283,47 @@ describe('When there are three todos already POSTed', () => {
       assert(!afterGetResponse.body.find((todo) => todo.task === 'test 1'))
     })
 
-    // test('DELETE one fails with Unauthorised for different sessionId', async () => {
+    test('DELETE one fails with Unauthorised for different sessionId', async () => {
+      const anotherSessionId = await helper.obtainSessionId(api)
+      const forbiddenResponse = await api
+        .delete(`/api/todos/${test1TodoId}`)
+        .set('Cookie', `sessionId=${anotherSessionId}`)
+        .expect(401)
+        .expect('Content-Type', /application\/json/)
 
-    // })
+      assert.strictEqual(forbiddenResponse.body.error, 'Unauthorised access')
+    })
+
+    test('DELETE one fails if valid doc ID but not found', async () => {
+      await api
+        .delete(`/api/todos/${test1TodoId}`)
+        .set('Cookie', `sessionId=${sessionId}`)
+        .expect(204)
+
+      const notFoundResponse = await api
+        .delete(`/api/todos/${test1TodoId}`)
+        .set('Cookie', `sessionId=${sessionId}`)
+        .expect(404)
+        .expect('Content-Type', /application\/json/)
+
+      assert.strictEqual(
+        notFoundResponse.body.error,
+        'valid document id but document not found'
+      )
+    })
+
+    test('DELETE one fails if doc ID is invalid', async () => {
+      const castErrorResponse = await api
+        .delete('/api/todos/invalid')
+        .set('Cookie', `sessionId=${sessionId}`)
+        .expect(400)
+        .expect('Content-Type', /application\/json/)
+
+      assert.strictEqual(
+        castErrorResponse.body.error,
+        'id provided cannot be cast to valid mongo id'
+      )
+    })
   })
 })
 
