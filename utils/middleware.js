@@ -17,13 +17,6 @@ const errorHandler = (error, request, response, next) => {
     return response.status(400).json({
       error: error.message,
     })
-  } else if (
-    error.name === 'TypeError' &&
-    error.message === 'invalid document id'
-  ) {
-    return response.status(400).json({
-      error: error.message,
-    })
   } else if (error.name === 'CastError') {
     return response.status(400).json({
       error: 'id provided cannot be cast to valid mongo id',

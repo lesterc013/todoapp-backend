@@ -50,8 +50,6 @@ todoRouter.put('/:id', async (request, response, next) => {
       return next(createUnauthorisedError())
     }
   } catch (error) {
-    error.message = 'invalid document id'
-    error.statusCode = 400
     return next(error)
   }
   // Update the relevant fields
@@ -81,8 +79,6 @@ todoRouter.delete('/:id', async (request, response, next) => {
       return next(createUnauthorisedError())
     }
   } catch (error) {
-    error.message = 'invalid id'
-    error.statusCode = 400
     next(error)
   }
 
@@ -115,8 +111,6 @@ todoRouter.get('/:id', async (request, response, next) => {
     }
     response.status(200).json(doc)
   } catch (error) {
-    error.message = 'invalid id'
-    error.statusCode = 400
     next(error)
   }
 })
