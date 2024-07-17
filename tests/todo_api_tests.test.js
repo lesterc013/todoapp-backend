@@ -9,6 +9,11 @@ const helper = require('./test_helpers')
 
 const api = supertest(app)
 
+beforeEach(async () => {
+  // Start each test with a clean slate
+  await Todo.deleteMany({})
+})
+
 test('Session ID is generated for user without one when GET request made to baseUrl -- set-cookie should be in the response', async () => {
   const response = await api.get('/api/todos').expect(200)
   assert(response.header['set-cookie'] !== null)
@@ -72,13 +77,7 @@ describe('GET requests suite', () => {
   })
 
   test('GET one todo successful with a valid sessionId', async () => {
-    const getAllResponse = await api
-      .get('/api/todos')
-      .set('Cookie', `sessionId=${sessionId}`)
-    const test1TodoId = getAllResponse.body.find(
-      (todo) => todo.task === 'test 1'
-    ).id
-
+    const test1TodoId = await helper.obtainTest1Id(api, sessionId)
     const test1Response = await api
       .get(`/api/todos/${test1TodoId}`)
       .set('Cookie', `sessionId=${sessionId}`)
@@ -91,12 +90,7 @@ describe('GET requests suite', () => {
 
   test('GET one todo posted by another sessionId should be forbidden', async () => {
     // Obtain test 1 id
-    const getAllResponse = await api
-      .get('/api/todos')
-      .set('Cookie', `sessionId=${sessionId}`)
-    const test1TodoId = getAllResponse.body.find(
-      (todo) => todo.task === 'test 1'
-    ).id
+    const test1TodoId = await helper.obtainTest1Id(api, sessionId)
     const anotherSessionId = await helper.obtainSessionId(api)
     const forbiddenResponse = await api
       .get(`/api/todos/${test1TodoId}`)
@@ -106,6 +100,8 @@ describe('GET requests suite', () => {
 
     assert.strictEqual(forbiddenResponse.body.error, 'Unauthorised access')
   })
+
+  // test('GET one todo with valid mongo id but no longer there should return not found error', async () => {})
 })
 
 after(async () => {

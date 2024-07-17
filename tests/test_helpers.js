@@ -13,7 +13,18 @@ const postTodo = async (api, todo, sessionId) => {
     .set('Cookie', `sessionId=${sessionId}`)
 }
 
+const obtainTest1Id = async (api, sessionId) => {
+  const getAllResponse = await api
+    .get('/api/todos')
+    .set('Cookie', `sessionId=${sessionId}`)
+  const test1TodoId = getAllResponse.body.find(
+    (todo) => todo.task === 'test 1'
+  ).id
+  return test1TodoId
+}
+
 module.exports = {
   obtainSessionId,
   postTodo,
+  obtainTest1Id,
 }
