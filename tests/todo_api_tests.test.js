@@ -88,6 +88,24 @@ describe('GET requests suite', () => {
     assert.strictEqual(test1Response.body.task, 'test 1')
     assert.strictEqual(test1Response.body.id, test1TodoId)
   })
+
+  test('GET one todo posted by another sessionId should be forbidden', async () => {
+    // Obtain test 1 id
+    const getAllResponse = await api
+      .get('/api/todos')
+      .set('Cookie', `sessionId=${sessionId}`)
+    const test1TodoId = getAllResponse.body.find(
+      (todo) => todo.task === 'test 1'
+    ).id
+    const anotherSessionId = await helper.obtainSessionId(api)
+    const forbiddenResponse = await api
+      .get(`/api/todos/${test1TodoId}`)
+      .set('Cookie', `sessionId=${anotherSessionId}`)
+      .expect(401)
+      .expect('Content-Type', /application\/json/)
+
+    assert.strictEqual(forbiddenResponse.body.error, 'Unauthorised access')
+  })
 })
 
 after(async () => {
