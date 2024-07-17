@@ -6,6 +6,7 @@ const supertest = require('supertest')
 const app = require('../app')
 const Todo = require('../models/todoModel')
 const helper = require('./test_helpers')
+const { send } = require('node:process')
 
 const api = supertest(app)
 
@@ -53,7 +54,7 @@ describe('POST requests suite', () => {
   })
 })
 
-describe('GET requests suite', () => {
+describe('When there are three todos already POSTed', () => {
   let sessionId
   // POST a few todos before each test in this suite
   beforeEach(async () => {
@@ -119,7 +120,7 @@ describe('GET requests suite', () => {
       assert.strictEqual(forbiddenResponse.body.error, 'Unauthorised access')
     })
 
-    test('Valid doc Id but not found', async () => {
+    test('Valid doc ID but not found', async () => {
       await Todo.findByIdAndDelete(test1TodoId)
       const notFoundResponse = await api
         .get(`/api/todos/${test1TodoId}`)
@@ -133,7 +134,7 @@ describe('GET requests suite', () => {
       )
     })
 
-    test('Cast error doc Id', async () => {
+    test('Cast error doc ID if cannot cast to proper mongo ID', async () => {
       const castErrorResponse = await api
         .get('/api/todos/invalid')
         .set('Cookie', `sessionId=${sessionId}`)
@@ -144,6 +145,29 @@ describe('GET requests suite', () => {
         castErrorResponse.body.error,
         'id provided cannot be cast to valid mongo id'
       )
+    })
+  })
+
+  describe('PUT requests suite', () => {
+    let test1TodoId
+    beforeEach(async () => {
+      test1TodoId = await helper.obtainTest1Id(api, sessionId)
+    })
+
+    test('Successful with same sessionId and valid doc ID', async () => {
+      const update = {
+        task: 'test 1 PUT',
+        done: true,
+      }
+      const putResponse = await api
+        .put(`/api/todos/${test1TodoId}`)
+        .send(update)
+        .set('Cookie', `sessionId=${sessionId}`)
+        .expect(201)
+        .expect('Content-Type', /application\/json/)
+
+      assert.strictEqual(putResponse.body.task, update.task)
+      assert.strictEqual(putResponse.body.done, update.done)
     })
   })
 })
