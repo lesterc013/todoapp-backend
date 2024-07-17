@@ -56,6 +56,21 @@ describe('GET requests suite', () => {
     assert(finalResponse.body.length === 3)
   })
 
+  test('GET all todos with a different sessionId should return empty array instead of what was POST with first sessionId', async () => {
+    const firstResponse = await api
+      .get('/api/todos')
+      .set('Cookie', `sessionId=${sessionId}`)
+
+    const anotherSessionId = await helper.obtainSessionId(api)
+    const anotherResponse = await api
+      .get('/api/todos')
+      .set('Cookie', `sessionId=${anotherSessionId}`)
+      .expect(200)
+
+    assert.notDeepStrictEqual(anotherResponse.body, firstResponse.body)
+    assert(anotherResponse.body.length === 0)
+  })
+
   test('GET one todo successful with a valid sessionId', async () => {
     const getAllResponse = await api
       .get('/api/todos')
