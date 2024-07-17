@@ -61,7 +61,6 @@ todoRouter.put('/:id', async (request, response, next) => {
     const savedDoc = await doc.save()
     response.status(201).json(savedDoc)
   } catch (error) {
-    console.log(error)
     next(error)
   }
 })
