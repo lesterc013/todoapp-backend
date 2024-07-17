@@ -238,6 +238,32 @@ describe('When there are three todos already POSTed', () => {
       )
     })
   })
+
+  describe('DELETE suite', () => {
+    test('DELETE all with same sessionId works', async () => {
+      const initialGetResponse = await api
+        .get('/api/todos')
+        .set('Cookie', `sessionId=${sessionId}`)
+
+      await api
+        .delete('/api/todos')
+        .set('Cookie', `sessionId=${sessionId}`)
+        .expect(204)
+
+      const afterGetResponse = await api
+        .get('/api/todos')
+        .set('Cookie', `sessionId=${sessionId}`)
+
+      assert.notDeepStrictEqual(afterGetResponse.body, initialGetResponse.body)
+      assert(initialGetResponse.body.length === 3)
+      assert(afterGetResponse.body.length === 0)
+    })
+
+    let test1TodoId
+    beforeEach(async () => {
+      test1TodoId = await helper.obtainTest1Id(api, sessionId)
+    })
+  })
 })
 
 after(async () => {
