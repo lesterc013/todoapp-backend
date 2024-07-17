@@ -82,7 +82,6 @@ describe('GET requests suite', () => {
       test1TodoId = await helper.obtainTest1Id(api, sessionId)
     })
     test('Successful with a valid sessionId', async () => {
-      test1TodoId = await helper.obtainTest1Id(api, sessionId)
       const test1Response = await api
         .get(`/api/todos/${test1TodoId}`)
         .set('Cookie', `sessionId=${sessionId}`)
@@ -93,8 +92,7 @@ describe('GET requests suite', () => {
       assert.strictEqual(test1Response.body.id, test1TodoId)
     })
 
-    test('If GET one posted by another sessionId should be forbidden', async () => {
-      test1TodoId = await helper.obtainTest1Id(api, sessionId)
+    test('Forbidden: another sessonId', async () => {
       const anotherSessionId = await helper.obtainSessionId(api)
       const forbiddenResponse = await api
         .get(`/api/todos/${test1TodoId}`)
@@ -105,9 +103,32 @@ describe('GET requests suite', () => {
       assert.strictEqual(forbiddenResponse.body.error, 'Unauthorised access')
     })
 
-    // test('GET one todo with valid mongo id but no longer there should return not found error', async () => {
+    test('Valid doc Id but not found', async () => {
+      await Todo.findByIdAndDelete(test1TodoId)
+      const notFoundResponse = await api
+        .get(`/api/todos/${test1TodoId}`)
+        .set('Cookie', `sessionId=${sessionId}`)
+        .expect(404)
+        .expect('Content-Type', /application\/json/)
 
-    // })
+      assert.strictEqual(
+        notFoundResponse.body.error,
+        'valid document id but document not found'
+      )
+    })
+
+    test('Cast error doc Id', async () => {
+      const castErrorResponse = await api
+        .get('/api/todos/invalid')
+        .set('Cookie', `sessionId=${sessionId}`)
+        .expect(400)
+        .expect('Content-Type', /application\/json/)
+
+      assert.strictEqual(
+        castErrorResponse.body.error,
+        'id provided cannot be cast to valid mongo id'
+      )
+    })
   })
 })
 
