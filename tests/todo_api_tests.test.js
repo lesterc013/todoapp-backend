@@ -76,32 +76,39 @@ describe('GET requests suite', () => {
     assert(anotherResponse.body.length === 0)
   })
 
-  test('GET one todo successful with a valid sessionId', async () => {
-    const test1TodoId = await helper.obtainTest1Id(api, sessionId)
-    const test1Response = await api
-      .get(`/api/todos/${test1TodoId}`)
-      .set('Cookie', `sessionId=${sessionId}`)
-      .expect(200)
-      .expect('Content-Type', /application\/json/)
+  describe('GET one todo suite', () => {
+    let test1TodoId
+    beforeEach(async () => {
+      test1TodoId = await helper.obtainTest1Id(api, sessionId)
+    })
+    test('Successful with a valid sessionId', async () => {
+      test1TodoId = await helper.obtainTest1Id(api, sessionId)
+      const test1Response = await api
+        .get(`/api/todos/${test1TodoId}`)
+        .set('Cookie', `sessionId=${sessionId}`)
+        .expect(200)
+        .expect('Content-Type', /application\/json/)
 
-    assert.strictEqual(test1Response.body.task, 'test 1')
-    assert.strictEqual(test1Response.body.id, test1TodoId)
+      assert.strictEqual(test1Response.body.task, 'test 1')
+      assert.strictEqual(test1Response.body.id, test1TodoId)
+    })
+
+    test('If GET one posted by another sessionId should be forbidden', async () => {
+      test1TodoId = await helper.obtainTest1Id(api, sessionId)
+      const anotherSessionId = await helper.obtainSessionId(api)
+      const forbiddenResponse = await api
+        .get(`/api/todos/${test1TodoId}`)
+        .set('Cookie', `sessionId=${anotherSessionId}`)
+        .expect(401)
+        .expect('Content-Type', /application\/json/)
+
+      assert.strictEqual(forbiddenResponse.body.error, 'Unauthorised access')
+    })
+
+    // test('GET one todo with valid mongo id but no longer there should return not found error', async () => {
+
+    // })
   })
-
-  test('GET one todo posted by another sessionId should be forbidden', async () => {
-    // Obtain test 1 id
-    const test1TodoId = await helper.obtainTest1Id(api, sessionId)
-    const anotherSessionId = await helper.obtainSessionId(api)
-    const forbiddenResponse = await api
-      .get(`/api/todos/${test1TodoId}`)
-      .set('Cookie', `sessionId=${anotherSessionId}`)
-      .expect(401)
-      .expect('Content-Type', /application\/json/)
-
-    assert.strictEqual(forbiddenResponse.body.error, 'Unauthorised access')
-  })
-
-  // test('GET one todo with valid mongo id but no longer there should return not found error', async () => {})
 })
 
 after(async () => {
