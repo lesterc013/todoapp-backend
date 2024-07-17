@@ -263,6 +263,29 @@ describe('When there are three todos already POSTed', () => {
     beforeEach(async () => {
       test1TodoId = await helper.obtainTest1Id(api, sessionId)
     })
+
+    test('DELETE one success with same sessionId and valid doc ID', async () => {
+      const initialGetResponse = await api
+        .get('/api/todos')
+        .set('Cookie', `sessionId=${sessionId}`)
+
+      await api
+        .delete(`/api/todos/${test1TodoId}`)
+        .set('Cookie', `sessionId=${sessionId}`)
+        .expect(204)
+
+      const afterGetResponse = await api
+        .get('/api/todos')
+        .set('Cookie', `sessionId=${sessionId}`)
+
+      assert(initialGetResponse.body.length === 3)
+      assert(afterGetResponse.body.length === 2)
+      assert(!afterGetResponse.body.find((todo) => todo.task === 'test 1'))
+    })
+
+    // test('DELETE one fails with Unauthorised for different sessionId', async () => {
+
+    // })
   })
 })
 
