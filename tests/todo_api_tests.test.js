@@ -35,6 +35,22 @@ describe('POST requests suite', () => {
 
     assert.strictEqual(postResponse.body.task, 'POST one todo test')
   })
+
+  test('POST one todo without task should produce validation error with appropriate message', async () => {
+    const sessionId = await helper.obtainSessionId(api)
+    const todo = {}
+    const postResponse = await api
+      .post('/api/todos')
+      .send(todo)
+      .set('Cookie', `sessionId=${sessionId}`)
+      .expect(400)
+      .expect('Content-Type', /application\/json/)
+
+    assert.strictEqual(
+      postResponse.body.error,
+      'Todo validation failed: task: Task is required'
+    )
+  })
 })
 
 describe('GET requests suite', () => {
