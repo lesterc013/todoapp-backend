@@ -93,8 +93,7 @@ todoRouter.delete('/:id', async (request, response, next) => {
 
 // DELETE ALL TODOS
 todoRouter.delete('/', async (request, response) => {
-  const deleted = await Todo.deleteMany({ sessionId: request.sessionId })
-  console.log(deleted)
+  await Todo.deleteMany({ sessionId: request.sessionId })
   response.status(204).end()
 })
 
