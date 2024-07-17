@@ -204,6 +204,24 @@ describe('When there are three todos already POSTed', () => {
         'valid document id but document not found'
       )
     })
+
+    test('Cast error doc ID if cannot cast to proper mongo ID', async () => {
+      const update = {
+        task: 'test 1 PUT',
+        done: true,
+      }
+      const castErrorResponse = await api
+        .put('/api/todos/invalid')
+        .send(update)
+        .set('Cookie', `sessionId=${sessionId}`)
+        .expect(400)
+        .expect('Content-Type', /application\/json/)
+
+      assert.strictEqual(
+        castErrorResponse.body.error,
+        'id provided cannot be cast to valid mongo id'
+      )
+    })
   })
 })
 
