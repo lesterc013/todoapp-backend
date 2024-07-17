@@ -43,7 +43,7 @@ const setSessionId = (request, response, next) => {
   if (!request.cookies.sessionId) {
     // Generate the UUID
     const sessionId = crypto.randomUUID()
-    const maxAge = 1000 * 60 * 5
+    const maxAge = 1000 * 60 * 60 * 24 * 7
     // Store it in response.cookie which is the Set-Cookie header for subsequent requests
     response.cookie('sessionId', sessionId, {
       httpOnly: true,
