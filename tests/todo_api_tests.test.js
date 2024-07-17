@@ -169,6 +169,22 @@ describe('When there are three todos already POSTed', () => {
       assert.strictEqual(putResponse.body.task, update.task)
       assert.strictEqual(putResponse.body.done, update.done)
     })
+
+    test('Forbidden: another sessonId', async () => {
+      const update = {
+        task: 'test 1 PUT',
+        done: true,
+      }
+      const anotherSessionId = await helper.obtainSessionId(api)
+      const forbiddenResponse = await api
+        .put(`/api/todos/${test1TodoId}`)
+        .send(update)
+        .set('Cookie', `sessionId=${anotherSessionId}`)
+        .expect(401)
+        .expect('Content-Type', /application\/json/)
+
+      assert.strictEqual(forbiddenResponse.body.error, 'Unauthorised access')
+    })
   })
 })
 
