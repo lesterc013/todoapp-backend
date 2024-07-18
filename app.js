@@ -23,6 +23,7 @@ connectMongo()
 /**
  * USE MIDDLEWARE BEFORE PATHS
  */
+app.use(express.static('dist'))
 app.use(express.json())
 app.use(cookieParser())
 // Note: Because config module already required dotenv, dont need to require it again here
