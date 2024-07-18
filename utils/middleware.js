@@ -9,7 +9,9 @@ const requestLogger = (request, response, next) => {
 }
 
 const errorHandler = (error, request, response, next) => {
-  // console.log('error name:', error.name)
+  console.log('error name:', error.name)
+  console.log('error', error)
+  console.log('error message', error.message)
   if (
     error.name === 'ValidationError' &&
     error.message.includes('Todo validation failed')
