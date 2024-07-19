@@ -27,7 +27,7 @@ app.use(express.static('dist'))
 app.use(express.json())
 app.use(cookieParser())
 // Note: Because config module already required dotenv, dont need to require it again here
-if (process.env.NODE_ENV !== 'test') {
+if (process.env.NODE_ENV === 'dev') {
   app.use(middleware.requestLogger)
 }
 app.use(middleware.setSessionId)
