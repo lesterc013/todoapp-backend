@@ -1,5 +1,7 @@
 const mongoose = require('mongoose')
+const encrypt = require('mongoose-encryption')
 require('dotenv').config()
+const config = require('../utils/config')
 
 const todoSchema = new mongoose.Schema({
   task: {
@@ -24,6 +26,16 @@ const todoSchema = new mongoose.Schema({
 
 // Set a TTL index so that mongo knows to delete x seconds after the createdAt timing
 todoSchema.index({ expireAt: 1 }, { expireAfterSeconds: 0 })
+
+// Encrypt and decrypt
+const encKey = config.encKey
+const sigKey = config.sigKey
+
+todoSchema.plugin(encrypt, {
+  encryptionKey: encKey,
+  signingKey: sigKey,
+  encryptedFields: ['task', 'done'],
+})
 
 todoSchema.set('toJSON', {
   transform: (document, returnedObject) => {
