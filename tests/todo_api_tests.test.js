@@ -47,10 +47,7 @@ describe('POST requests suite', () => {
       .expect(400)
       .expect('Content-Type', /application\/json/)
 
-    assert.strictEqual(
-      postResponse.body.error,
-      'Todo validation failed: task: Task is required'
-    )
+    assert.strictEqual(postResponse.body.error, 'Please provide a task')
   })
 })
 
@@ -234,7 +231,7 @@ describe('When there are three todos already POSTed', () => {
 
       assert.strictEqual(
         validationErrorResponse.body.error,
-        'Todo validation failed: task: Task is required'
+        'Please provide a task'
       )
     })
   })
