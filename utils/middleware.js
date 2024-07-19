@@ -9,9 +9,9 @@ const requestLogger = (request, response, next) => {
 }
 
 const errorHandler = (error, request, response, next) => {
-  console.log('error name:', error.name)
-  console.log('error', error)
-  console.log('error message', error.message)
+  // console.log('error name:', error.name)
+  // console.log('error', error)
+  // console.log('error message', error.message)
   if (
     error.name === 'ValidationError' &&
     error.message.includes('Todo validation failed')
@@ -49,6 +49,7 @@ const setSessionId = (request, response, next) => {
     // Store it in response.cookie which is the Set-Cookie header for subsequent requests
     response.cookie('sessionId', sessionId, {
       httpOnly: true,
+      secure: true,
       maxAge: maxAge, // 1000 * 60 * 60 * 24 * 7
     })
     // Set the current request.sessionId = this sessionId so that the following routes can use it for this request
